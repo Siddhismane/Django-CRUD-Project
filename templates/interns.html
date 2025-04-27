@@ -1,0 +1,150 @@
+<!-- HTML Template (templates/interns.html) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intern Management</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container mt-5">
+    <h2>Intern Management</h2>
+    
+    <!-- Intern Table -->
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Select</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="internTableBody">
+            {% for intern in interns %}
+            <tr data-id="{{ intern.id }}">
+                <td><input type="radio" name="selectedIntern" value="{{ intern.id }}"></td>
+                <td>{{ intern.name }}</td>
+                <td>{{ intern.email }}</td>
+                <td>{{ intern.phone }}</td>
+                <td>
+                    <button class="btn btn-primary edit-btn" data-id="{{ intern.id }}" data-name="{{ intern.name }}" data-email="{{ intern.email }}" data-phone="{{ intern.phone }}">Edit</button>
+                    <button class="btn btn-danger delete-btn" data-id="{{ intern.id }}">Delete</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Add New Intern Button -->
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#internModal">New Intern</button>
+
+    <!-- Modal Form -->
+    <div class="modal fade" id="internModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Intern Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="internForm">
+                        {% csrf_token %}
+                        <input type="hidden" id="internId">
+                        <div class="mb-3">
+                            <label>Name:</label>
+                            <input type="text" class="form-control" id="internName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Email:</label>
+                            <input type="email" class="form-control" id="internEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Phone:</label>
+                            <input type="text" class="form-control" id="internPhone" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Selected Intern Details Section -->
+    <div id="selectedInternDetails" class="mt-5" style="display: none;">
+        <h4>Selected Intern Details</h4>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td id="selectedName"></td>
+                    <td id="selectedEmail"></td>
+                    <td id="selectedPhone"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Create & Update Intern
+        $("#internForm").submit(function (e) {
+            e.preventDefault();
+            let internId = $("#internId").val();
+            let url = internId ? `/update/${internId}/` : "/create/";
+            let formData = {
+                name: $("#internName").val(),
+                email: $("#internEmail").val(),
+                phone: $("#internPhone").val(),
+                csrfmiddlewaretoken: $("input[name=csrfmiddlewaretoken]").val()
+            };
+            $.post(url, formData, function (data) {
+                location.reload();
+            });
+        });
+
+        // Edit Intern
+        $(".edit-btn").click(function () {
+            let id = $(this).data("id");
+            $("#internId").val(id);
+            $("#internName").val($(this).data("name"));
+            $("#internEmail").val($(this).data("email"));
+            $("#internPhone").val($(this).data("phone"));
+            $("#internModal").modal("show");
+        });
+
+        // Delete Intern
+        $(".delete-btn").click(function () {
+            let id = $(this).data("id");
+            $.post(`/delete/${id}/`, {csrfmiddlewaretoken: $("input[name=csrfmiddlewaretoken]").val()}, function () {
+                location.reload();
+            });
+        });
+
+        // Show Selected Intern Details when Radio Button clicked
+        $("input[name='selectedIntern']").change(function () {
+            let selectedId = $(this).val();
+            let row = $(`tr[data-id='${selectedId}']`);
+            let name = row.find("td:eq(1)").text();
+            let email = row.find("td:eq(2)").text();
+            let phone = row.find("td:eq(3)").text();
+
+            $("#selectedName").text(name);
+            $("#selectedEmail").text(email);
+            $("#selectedPhone").text(phone);
+
+            $("#selectedInternDetails").show(); // Make the new table visible
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
